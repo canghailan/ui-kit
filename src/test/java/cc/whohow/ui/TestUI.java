@@ -26,7 +26,7 @@ public class TestUI extends Frame {
     private final Java2DGraphicsContext context = new Java2DGraphicsContext();
     private final Java2DGraphicsBuffer buffer = context.allocateGraphicsBuffer();
     private volatile ScheduledFuture<?> scheduled;
-    private volatile boolean bufferInvalid = true;
+    private volatile long bufferInvalid = 0L;
 
     public TestUI() {
         add(buffer.getCanvas());
@@ -42,7 +42,7 @@ public class TestUI extends Frame {
             @Override
             public void componentResized(ComponentEvent e) {
                 System.out.println("componentResized");
-                bufferInvalid = true;
+                bufferInvalid = System.currentTimeMillis();
             }
 
             @Override
@@ -62,10 +62,10 @@ public class TestUI extends Frame {
 
     public void update() {
         try {
-            if (bufferInvalid) {
+            if (bufferInvalid < System.currentTimeMillis()) {
                 System.out.println("buffer reset");
                 buffer.reset();
-                bufferInvalid = false;
+                bufferInvalid = Long.MAX_VALUE;
             }
 
             context.drawRect(
@@ -95,6 +95,7 @@ public class TestUI extends Frame {
                     Canvas canvas = buffer.getCanvas();
                     canvas.setBackground(Color.WHITE);
                     canvas.createBufferStrategy(2);
+                    buffer.reset();
                     scheduled = ticker.scheduleWithFixedDelay(this::update, 0, FRAME, TimeUnit.MILLISECONDS);
                 }
             }
